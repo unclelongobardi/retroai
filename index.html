@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retro Chatbot</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #0f0;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        #chatbox {
+            width: 80%;
+            height: 60%;
+            border: 2px solid #0f0;
+            padding: 10px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            background-color: #000;
+        }
+        #input {
+            width: 80%;
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #0f0;
+            background-color: #000;
+            color: #0f0;
+            outline: none;
+        }
+        ::placeholder {
+            color: #0f0;
+        }
+    </style>
+</head>
+<body>
+    <h1>RETRO CHATBOT</h1>
+    <div id="chatbox"></div>
+    <input id="input" placeholder="Type your message..." autofocus />
+    <script>
+        const chatbox = document.getElementById("chatbox");
+        const input = document.getElementById("input");
+        let isWaiting = false; // Control de espera
+
+        input.addEventListener("keypress", async (event) => {
+            if (event.key === "Enter" && input.value.trim() !== "" && !isWaiting) {
+                isWaiting = true; // Activar temporizador
+                const userMessage = input.value;
+                chatbox.innerHTML += `<p><b>You:</b> ${userMessage}</p>`;
+                input.value = "";
+                chatbox.scrollTop = chatbox.scrollHeight;
+
+                try {
+                    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": "Bearer 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"
+                        },
+                        body: JSON.stringify({
+                            model: "gpt-3.5-turbo",
+                            messages: [
+                                { role: "system", content: "You are a helpful assistant." },
+                                { role: "user", content: userMessage }
+                            ],
+                            max_tokens: 100
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        const botMessage = data.choices[0].message.content.trim();
+                        chatbox.innerHTML += `<p><b>Bot:</b> ${botMessage}</p>`;
+                    } else {
+                        chatbox.innerHTML += `<p><b>Bot:</b> Error: ${data.error.message}</p>`;
+                    }
+                } catch (error) {
+                    chatbox.innerHTML += `<p><b>Bot:</b> Sorry, something went wrong. Check console for details.</p>`;
+                    console.error("Error:", error);
+                }
+
+                // Restablecer temporizador después de 20 segundos
+                setTimeout(() => {
+                    isWaiting = false;
+                }, 20000);
+
+                chatbox.scrollTop = chatbox.scrollHeight;
+            }
+        });
+    </script>
+</body>
+</html>
